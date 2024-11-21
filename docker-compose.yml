@@ -108,6 +108,63 @@ services:
     networks:
       - microservices-net
 
+  #address-service:
+    #build:
+      #context: ../address-service
+      #dockerfile: Dockerfile
+      #ports:
+      #- "8797:8787"
+
+    #discovery-service:
+      #build:
+      #context: ../discovery
+      #dockerfile: Dockerfile
+      #ports:
+      #- "8761:8761"
+
+    #gateway-service:
+      #build:
+      #context: .
+      #dockerfile: Dockerfile
+      #ports:
+      #- "8222:8222"
+
+    #notification-service:
+      #build:
+      #context: ../notification
+      #dockerfile: Dockerfile
+      #ports:
+      #- "8040:8040"
+
+    #order-service:
+      #build:
+      #context: ../order_service
+      #dockerfile: Dockerfile
+      #ports:
+      #- "9797:9797"
+
+    #payment-service:
+      #build:
+      #context: ../payment-service
+      #dockerfile: Dockerfile
+      #ports:
+      #- "8686:8686"
+
+    #product-service:
+      #build:
+      #context: ../product
+      #dockerfile: Dockerfile
+      #ports:
+      #- "8484:8484"
+
+    #user-service:
+      #build:
+      #context: ../user
+      #dockerfile: Dockerfile
+      #ports:
+      #- "8040:8040"
+
+
 networks:
   microservices-net:
     driver: bridge

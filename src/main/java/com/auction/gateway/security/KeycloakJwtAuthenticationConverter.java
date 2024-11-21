@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import reactor.core.publisher.Mono;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
@@ -23,6 +24,59 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Mono<A
     private static final String ACCOUNT = "account";
     private static final String ROLES = "roles";
 
+    @Override
+    public Mono<AbstractAuthenticationToken> convert(@NotNull Jwt jwt) {
+        System.out.println("JWT Claims: " + jwt.getClaims());
+        return Mono.just(
+                new JwtAuthenticationToken(
+                        jwt,
+                        Stream.concat(
+                                new JwtGrantedAuthoritiesConverter().convert(jwt).stream(),
+                                extractResourceRoles(jwt).stream()
+                        ).collect(Collectors.toSet())
+                )
+        );
+    }
+
+    /*
+    @Override
+    public Mono<AbstractAuthenticationToken> convert(@NotNull Jwt jwt) {
+        return Mono.just(
+                new JwtAuthenticationToken(
+                        jwt,
+                        Stream.concat(
+                                new JwtGrantedAuthoritiesConverter().convert(jwt).stream(),
+                                extractResourceRoles(jwt).stream()
+                        ).collect(Collectors.toSet())
+                )
+        );
+    }*/
+
+    /**
+     * Extracts roles from the 'resource_access' claim in the JWT.
+     *
+     * @param jwt the JWT token.
+     * @return a collection of granted authorities.
+     */
+    private Collection<? extends GrantedAuthority> extractResourceRoles(Jwt jwt) {
+        Map<String, Object> resourceAccess = jwt.getClaimAsMap(RESOURCE_ACCESS);
+        if (resourceAccess == null) {
+            return Collections.emptySet();
+        }
+
+        Map<String, Object> accountAccess = (Map<String, Object>) resourceAccess.getOrDefault(ACCOUNT, Collections.emptyMap());
+        List<String> roles = (List<String>) accountAccess.getOrDefault(ROLES, Collections.emptyList());
+
+        if (roles.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.replace("-", "_").toUpperCase()))
+                .collect(Collectors.toSet());
+    }
+}
+    /*
     @Override
     public Mono<AbstractAuthenticationToken> convert(@NotNull Jwt jwt) {
         return Mono.just(
@@ -41,16 +95,17 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Mono<A
      * @param jwt the JWT token.
      * @return a collection of granted authorities.
      */
+    /*
     private Collection<? extends GrantedAuthority> extractResourceRoles(Jwt jwt) {
         Map<String, Object> resourceAccess = jwt.getClaimAsMap(RESOURCE_ACCESS);
         if (resourceAccess == null || !resourceAccess.containsKey(ACCOUNT)) {
-            return Collections.emptySet(); // No resource access or roles defined
+            return Collections.emptySet();
         }
 
         Map<String, Object> accountAccess = (Map<String, Object>) resourceAccess.get(ACCOUNT);
         List<String> roles = (List<String>) accountAccess.get(ROLES);
         if (roles == null) {
-            return Collections.emptySet(); // No roles defined in the account resource access
+            return Collections.emptySet();
         }
 
         return roles.stream()
@@ -58,7 +113,7 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Mono<A
                 .collect(toSet());
     }
 }
-
+*/
 /*
 public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
     private static final String RESOURCE_ACCESS = "resource_access";
