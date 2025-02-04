@@ -14,6 +14,134 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+@Slf4j
+@Component
+public class JwtForwardingFilter implements WebFilter {
+
+    private final JwtDecoder jwtDecoder;
+    private final AdminTokenProvider adminTokenProvider;
+
+    public JwtForwardingFilter(AdminTokenProvider adminTokenProvider) {
+        this.adminTokenProvider = adminTokenProvider;
+        String issuerUri = "http://localhost:9098/realms/auction-realm";
+        this.jwtDecoder = JwtDecoders.fromIssuerLocation(issuerUri);
+    }
+
+    @Override
+    public Mono<Void> filter(@NotNull ServerWebExchange exchange, @NotNull WebFilterChain chain) {
+        log.info("Incoming request: method={}, path={}, headers={}",
+                exchange.getRequest().getMethod(), exchange.getRequest().getPath(), exchange.getRequest().getHeaders());
+
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        log.info("Incoming Authorization Header: {}", authHeader != null ? "[REDACTED]" : "Missing");
+
+        String token = null;
+        String username = "anonymous";
+        String firstName = "unknown";
+        String lastName = "unknown";
+        String email = "unknown";
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+            try {
+                Jwt jwt = jwtDecoder.decode(token);
+                log.debug("Decoded JWT claims: {}", jwt.getClaims());
+
+                username = jwt.getClaimAsString("preferred_username");
+                firstName = jwt.getClaimAsString("given_name");
+                lastName = jwt.getClaimAsString("family_name");
+                email = jwt.getClaimAsString("email");
+
+            } catch (Exception e) {
+                log.error("JWT decoding failed: {}", e.getMessage(), e);
+            }
+        } else {
+            log.warn("Missing or invalid Authorization header.");
+        }
+
+        exchange = exchange.mutate()
+                .request(exchange.getRequest().mutate()
+                        .header("Authorization", token != null ? "Bearer " + token : "")
+                        .header("X-Auth-Token", Optional.ofNullable(token).orElse("anonymous"))
+                        .header("X-Username", Optional.ofNullable(username).orElse("anonymous"))
+                        .header("X-FirstName", Optional.ofNullable(firstName).orElse("unknown"))
+                        .header("X-LastName", Optional.ofNullable(lastName).orElse("unknown"))
+                        .header("X-Email", Optional.ofNullable(email).orElse("unknown"))
+                        .build())
+                .build();
+
+        log.info("Forwarding request with updated headers.");
+        return chain.filter(exchange);
+    }
+}
+
+/*
+@Slf4j
+@Component
+public class JwtForwardingFilter implements WebFilter {
+
+    private final JwtDecoder jwtDecoder;
+    private final AdminTokenProvider adminTokenProvider;
+
+    public JwtForwardingFilter(AdminTokenProvider adminTokenProvider) {
+        this.adminTokenProvider = adminTokenProvider;
+        String issuerUri = "http://localhost:9098/realms/auction-realm";
+        this.jwtDecoder = JwtDecoders.fromIssuerLocation(issuerUri);
+    }
+
+    @Override
+    public Mono<Void> filter(@NotNull ServerWebExchange exchange, @NotNull WebFilterChain chain) {
+        log.info("Incoming headers: {}", exchange.getRequest().getHeaders());
+
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        log.info("Incoming Authorization Header: {}", authHeader);
+
+        String token = null;
+        String username = "anonymous";
+        String firstName = "unknown";
+        String lastName = "unknown";
+        String email = "unknown";
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+
+            try {
+                Jwt jwt = jwtDecoder.decode(token);
+                log.info("JWT Claims: {}", jwt.getClaims());
+
+                username = Optional.ofNullable(jwt.getClaimAsString("preferred_username")).orElse("anonymous");
+                firstName = Optional.ofNullable(jwt.getClaimAsString("given_name")).orElse("unknown");
+                lastName = Optional.ofNullable(jwt.getClaimAsString("family_name")).orElse("unknown");
+                email = Optional.ofNullable(jwt.getClaimAsString("email")).orElse("unknown");
+
+                log.info("Extracted user info: username={}, firstName={}, lastName={}", username, firstName, lastName);
+            } catch (Exception e) {
+                log.error("Failed to decode JWT: {}", e.getMessage(), e);
+            }
+        } else {
+            log.warn("Authorization header is missing or invalid");
+        }
+
+        exchange = exchange.mutate()
+                .request(exchange.getRequest().mutate()
+                        .header("Authorization", token)
+                        .header("X-Auth-Token", Optional.ofNullable(token).orElse("anonymous"))
+                        .header("X-Username", username)
+                        .header("X-FirstName", firstName)
+                        .header("X-LastName", lastName)
+                        .header("X-Email", email)
+                        .build())
+                .build();
+
+        log.info("Final headers after mutation: {}", exchange.getRequest().getHeaders());
+
+        return chain.filter(exchange);
+    }
+}
+*/
+/*
 
 @Slf4j
 @Component
@@ -39,9 +167,10 @@ public class JwtForwardingFilter implements WebFilter {
         String firstName = "unknown";
         String lastName = "unknown";
         String email = "unknown";
+        //String token;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
+           String token = authHeader.substring(7);
 
             try {
                 Jwt jwt = jwtDecoder.decode(token);
@@ -61,6 +190,7 @@ public class JwtForwardingFilter implements WebFilter {
 
         exchange = exchange.mutate()
                 .request(exchange.getRequest().mutate()
+                        //.header("X-Auth-Token", token)
                         .header("X-Username", username)
                         .header("X-FirstName", firstName)
                         .header("X-LastName", lastName)
@@ -73,6 +203,9 @@ public class JwtForwardingFilter implements WebFilter {
         return chain.filter(exchange);
     }
 }
+
+*/
+
 /*
     @Override
     public Mono<Void> filter(@NotNull ServerWebExchange exchange, @NotNull WebFilterChain chain) {
