@@ -1,5 +1,171 @@
 package com.auction.gateway.security;
 
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.filter.CorsFilter;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.springframework.security.config.Customizer.withDefaults;
+
+@Configuration
+@EnableWebFluxSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    // Define public endpoints that are accessible without authentication
+    private static final String[] PUBLIC_ENDPOINTS = {
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-resources/**",
+            "/api-docs/**",
+            "/aggregate/**",
+            "/eureka/**",
+            "/user-service/swagger-ui/**",
+            "/api/v1/products/get-all-products",
+            "/api/v1/products/{productId}",
+            "/api/v1/products/search"
+    };
+
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity serverHttpSecurity) {
+        serverHttpSecurity
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)  // Disable CSRF for stateless authentication
+                .authorizeExchange(exchange -> exchange
+                        .pathMatchers(PUBLIC_ENDPOINTS).permitAll()  // Allow public endpoints
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()  // Allow CORS OPTIONS pre-flight requests
+                        .pathMatchers(HttpMethod.POST, "/api/v1/products/{productId}/mark-as-bought").authenticated()  // Secure POST endpoint
+                        .pathMatchers(HttpMethod.PUT, "/api/v1/products/{productId}").authenticated()
+                        .pathMatchers("/api/**").authenticated()  // All other /api/** endpoints require authentication
+                        .anyExchange().authenticated()  // Default to authenticated for any other requests
+                )
+                .oauth2ResourceServer(auth ->
+                        auth.jwt(token -> token.jwtAuthenticationConverter(new KeycloakJwtAuthenticationConverter())))  // Set up Keycloak JWT Authentication Converter
+        ;
+
+        return serverHttpSecurity.build();
+    }
+}
+
+    /*
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+        http
+                .cors(ServerHttpSecurity.CorsSpec::disable)
+                //.csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .anyExchange().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakJwtAuthenticationConverter()))
+                );
+
+        return http.build();
+    }
+
+
+     */
+/*
+    @Bean
+    public CorsWebFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+        config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        source.registerCorsConfiguration("/**", config);
+
+        return new CorsWebFilter(source);
+    }*/
+/*
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        return NimbusJwtDecoder.withJwkSetUri("http://localhost:9098/realms/auction-realm/protocol/openid-connect/certs").build();
+    }*/
+/*
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(req ->
+                        req.requestMatchers(PUBLIC_ENDPOINTS)
+                .permitAll()
+                                .anyRequest()
+                                .authenticated()
+                )
+                .oauth2ResourceServer(auth ->
+                        auth.jwt(token ->
+                                token.jwtAuthenticationConverter(new KeycloakJwtAuthenticationConverter())));
+
+        return http.build();
+    }
+
+    @Bean
+    public CorsFilter corsFilter() {
+        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        final CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        //config.addAllowedOrigin("*");
+        config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+        config.setAllowedHeaders(Arrays.asList(
+                HttpHeaders.ORIGIN,
+                HttpHeaders.CONTENT_TYPE,
+                HttpHeaders.ACCEPT,
+                HttpHeaders.AUTHORIZATION
+        ));
+
+        config.setAllowedMethods(Arrays.asList(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS",
+                "PATCH"
+        ));
+        source.registerCorsConfiguration("/**", config);
+
+        return new CorsFilter(source);
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        return NimbusJwtDecoder.withJwkSetUri("http://localhost:9098/realms/auction-realm/protocol/openid-connect/certs").build();
+    }
+*/
+//}
+
+
+
+
+
+/*
+package com.auction.gateway.security;
+
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -26,14 +192,19 @@ public class SecurityConfig  {
             "/api-docs/**", "/aggregate/**", "/eureka/**",  "/user-service/swagger-ui/**",
 
     };*/
-
+/*
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/products/get-all-products",
             "/api/v1/products/{productId}",
             "/api/v1/products/search",
-            "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
-            "/swagger-resources/**", "/api-docs/**", "/aggregate/**",
-            "/eureka/**", "/user-service/swagger-ui/**"
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-resources/**",
+            "/api-docs/**",
+            "/aggregate/**",
+            "/eureka/**",
+            "/user-service/swagger-ui/**"
     };
 
     @Bean
@@ -153,7 +324,7 @@ public class SecurityConfig  {
 
 */
 
-    //@Override
+//@Override
 
 
 
@@ -176,14 +347,14 @@ public class SecurityConfig  {
 
 
 */
-}
+
 /*
 
 }
 */
 
-   // public static final String ADMIN = "admin";
-   // public static final String USER = "user";
+// public static final String ADMIN = "admin";
+// public static final String USER = "user";
 
     /*
     @Bean
