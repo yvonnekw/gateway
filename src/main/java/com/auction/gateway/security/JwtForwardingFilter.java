@@ -1,7 +1,10 @@
 package com.auction.gateway.security;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -23,6 +26,7 @@ public class JwtForwardingFilter implements WebFilter {
     private final JwtDecoder jwtDecoder;
     private final AdminTokenProvider adminTokenProvider;
 
+
     public JwtForwardingFilter(AdminTokenProvider adminTokenProvider) {
         this.adminTokenProvider = adminTokenProvider;
         String issuerUri = "http://localhost:9098/realms/auction-realm";
@@ -36,6 +40,8 @@ public class JwtForwardingFilter implements WebFilter {
 
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         log.info("Incoming Authorization Header: {}", authHeader != null ? "[REDACTED]" : "Missing");
+
+        String idempotencyKey = exchange.getRequest().getHeaders().getFirst("Idempotency-Key");
 
         String token = null;
         String username = "anonymous";
@@ -61,14 +67,17 @@ public class JwtForwardingFilter implements WebFilter {
             log.warn("Missing or invalid Authorization header.");
         }
 
+        //String idempotencyKey = exchange.getRequest().getHeaders().getFirst("Idempotency-Key");
+
         exchange = exchange.mutate()
                 .request(exchange.getRequest().mutate()
                         .header("Authorization", token != null ? "Bearer " + token : "")
-                        .header("X-Auth-Token", Optional.ofNullable(token).orElse("anonymous"))
-                        .header("X-Username", Optional.ofNullable(username).orElse("anonymous"))
-                        .header("X-FirstName", Optional.ofNullable(firstName).orElse("unknown"))
-                        .header("X-LastName", Optional.ofNullable(lastName).orElse("unknown"))
-                        .header("X-Email", Optional.ofNullable(email).orElse("unknown"))
+                        //.header("X-Auth-Token", Optional.ofNullable(token).orElse("anonymous"))
+                        .header("X-Username", Optional.ofNullable(username).orElse(username))
+                        .header("X-FirstName", Optional.ofNullable(firstName).orElse(firstName))
+                        .header("X-LastName", Optional.ofNullable(lastName).orElse(lastName))
+                        .header("X-Email", Optional.ofNullable(email).orElse(email))
+                        .header("Idempotency-Key", Optional.ofNullable(idempotencyKey).orElse(""))
                         .build())
                 .build();
 
@@ -116,7 +125,7 @@ public class JwtForwardingFilter implements WebFilter {
                 lastName = Optional.ofNullable(jwt.getClaimAsString("family_name")).orElse("unknown");
                 email = Optional.ofNullable(jwt.getClaimAsString("email")).orElse("unknown");
 
-                log.info("Extracted user info: username={}, firstName={}, lastName={}", username, firstName, lastName);
+                log.info("Extracted user info: username={}, firstName={}, lastName={}", username, firstName, lastName, email);
             } catch (Exception e) {
                 log.error("Failed to decode JWT: {}", e.getMessage(), e);
             }
@@ -127,7 +136,7 @@ public class JwtForwardingFilter implements WebFilter {
         exchange = exchange.mutate()
                 .request(exchange.getRequest().mutate()
                         .header("Authorization", token)
-                        .header("X-Auth-Token", Optional.ofNullable(token).orElse("anonymous"))
+                       // .header("X-Auth-Token", Optional.ofNullable(token).orElse("anonymous"))
                         .header("X-Username", username)
                         .header("X-FirstName", firstName)
                         .header("X-LastName", lastName)
