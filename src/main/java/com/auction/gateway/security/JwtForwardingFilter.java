@@ -1,5 +1,7 @@
 package com.auction.gateway.security;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -39,6 +41,8 @@ public class JwtForwardingFilter implements WebFilter {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         log.info("Incoming Authorization Header: {}", authHeader != null ? "[REDACTED]" : "Missing");
 
+        String idempotencyKey = exchange.getRequest().getHeaders().getFirst("Idempotency-Key");
+
         String token = null;
         String username = "anonymous";
         String firstName = "unknown";
@@ -63,8 +67,7 @@ public class JwtForwardingFilter implements WebFilter {
             log.warn("Missing or invalid Authorization header.");
         }
 
-        String idempotencyKey = exchange.getRequest().getHeaders().getFirst("Idempotency-Key");
-
+        //String idempotencyKey = exchange.getRequest().getHeaders().getFirst("Idempotency-Key");
 
         exchange = exchange.mutate()
                 .request(exchange.getRequest().mutate()
