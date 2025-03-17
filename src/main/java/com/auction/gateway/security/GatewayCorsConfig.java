@@ -26,7 +26,7 @@ public class GatewayCorsConfig {
         // Use allowedOriginPatterns instead of allowedOrigins
         corsConfig.setAllowedOriginPatterns(List.of("http://localhost:4200"));
         corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        corsConfig.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Username", "X-FirstName", "X-LastName", "X-Email"));
+        corsConfig.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Username", "X-FirstName", "X-LastName", "X-Email", "Idempotency-Key"));
         corsConfig.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
