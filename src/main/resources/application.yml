@@ -3,8 +3,7 @@ spring:
     import: optional:configserver:http://localhost:8887
   application:
     name: gateway-service
-  #main:
-    #web-application-type: reactive
+
 
 
 
