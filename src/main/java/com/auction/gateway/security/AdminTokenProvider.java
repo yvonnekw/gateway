@@ -24,7 +24,7 @@ public class AdminTokenProvider {
 
     private final String clientId = "auction-client";
 
-    private final String clientSecret = "4fLoRVTTU7Hu7S1iBY2FNwPY7zYJYM77";
+    private final String clientSecret = "Xd9uZl1mZRbk7Wjqu8qjK93ZWsNDpmKx";
 
     private final String username = "adminsmith";
 

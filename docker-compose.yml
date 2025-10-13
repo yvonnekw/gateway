@@ -1,11 +1,11 @@
 version: '3.8'
 services:
   postgres-db:
-    image: postgres:16
+    image: postgres:17
     environment:
       POSTGRES_DB: keycloak_auction
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Mypassword1234
+      POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -35,9 +35,10 @@ services:
     image: quay.io/keycloak/keycloak:latest
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres-db:5432/keycloak-auction
+      jdbc:postgresql://host:
+      KC_DB_URL: jdbc:postgresql://host.docker.internal:5432/keycloak-auction
       KC_DB_USERNAME: postgres
-      KC_DB_PASSWORD: Mypassword1234
+      KC_DB_PASSWORD: postgres
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
@@ -62,19 +63,25 @@ services:
       - microservices-net
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.0.1
     container_name: ms_kafka
     ports:
       - 9092:9092
     depends_on:
       - zookeeper
     environment:
+      #KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      #KAFKA_CLUSTER_ID: 1s3mvavPQMm70Ew9cJ79Dg
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      #KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093"
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      #KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
     networks:
       - microservices-net
 
