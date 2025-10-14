@@ -1,11 +1,11 @@
 version: '3.8'
 services:
   postgres-db:
-    image: postgres:16
+    image: postgres:17
     environment:
-      POSTGRES_DB: keycloak_auction
+      POSTGRES_DB: keycloak-auction
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Mypassword1234
+      POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -37,7 +37,7 @@ services:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres-db:5432/keycloak-auction
       KC_DB_USERNAME: postgres
-      KC_DB_PASSWORD: Mypassword1234
+      KC_DB_PASSWORD: postgres
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
