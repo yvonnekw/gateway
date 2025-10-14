@@ -1,0 +1,23 @@
+services:
+  postgres-db:
+    volumes:
+      - prod_postgres_data:/var/lib/postgresql/data
+
+  keycloak:
+    ports:
+      - "8080:8080"
+
+  kafka:
+    environment:
+      # advertise hostname or container name for internal communication
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://ms_kafka:9092
+
+  mongodb:
+    volumes:
+      - prod_mongo_data:/data
+
+volumes:
+  prod_postgres_data:
+    name: prod_postgres_data
+  prod_mongo_data:
+    name: prod_mongo_data

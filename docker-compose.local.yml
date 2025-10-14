@@ -1,0 +1,25 @@
+services:
+  postgres-db:
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" # use different host port if you already have local Postgres
+
+  keycloak:
+    ports:
+      - "9098:8080"
+
+  kafka:
+    environment:
+      # advertise localhost for local testing
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+
+  mongodb:
+    volumes:
+      - local_mongo_data:/data
+
+volumes:
+  local_postgres_data:
+    name: local_postgres_data
+  local_mongo_data:
+    name: local_mongo_data
